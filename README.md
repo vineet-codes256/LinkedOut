@@ -1,3 +1,13 @@
+<p align="center">
+    <img src="https://github.com/user-attachments/assets/5d5360f9-7bea-4249-a24c-3f0b55a9a28b" alt="LinkedOut logo" />
+    <br />
+    <strong>LinkedOut</strong>
+    <br />
+    <i>Stay focused. Stay connected. Stay LinkedOut.</i>
+</p>
+
+
+
 # LinkedOut – LinkedIn Job Blocker Extension
 
 LinkedOut is a Chrome extension that helps you stay focused on networking and professional content by **hiding job postings and job-related elements** across LinkedIn.
