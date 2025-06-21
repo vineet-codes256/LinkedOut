@@ -1,10 +1,6 @@
 // LinkedIn Jobs Blocker Extension
 
-/**
- * Hides or removes job-related elements from the LinkedIn page.
- */
 function hideJobElements() {
-
     // Hide job links in navigation or lists
     document.querySelectorAll('li > a').forEach(link => {
         if (link.href && link.href.includes('linkedin.com/jobs')) {
@@ -14,20 +10,84 @@ function hideJobElements() {
         }
     });
 
+    // Remove job posting aggregates
     document.querySelectorAll('div').forEach(el => {
-        //data-id="urn:li:aggregate:(urn:li:jobPosting:4250342568,urn:li:jobPosting:4245278145,urn:li:jobPosting:4251819261,urn:li:jobPosting:4247411928,urn:li:jobPosting:4245269712)"
         if (el.getAttribute('data-id') && el.getAttribute('data-id').includes('urn:li:jobPosting')) {
-            el.parentNode.remove();
+            if (el.parentNode) el.parentNode.remove();
         }
     });
 }
-
-// Run once on script load
-hideJobElements();
 
 // Observe DOM changes for dynamically loaded content
 const observer = new MutationObserver(() => {
     hideJobElements();
 });
 observer.observe(document.body, { childList: true, subtree: true });
-// This will ensure that any new job-related elements added to the page are also hidden.
+
+// Overlay block function
+function showBlockOverlay() {
+    if (!document.getElementById('linkedin-block-overlay')) {
+        // prevent scrolling
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+
+        //prevent right click
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // prevent any key presses
+        document.addEventListener('keydown', (e) => {
+            e.preventDefault();
+        });
+
+        const overlay = document.createElement('div');
+        overlay.id = 'linkedin-block-overlay';
+        overlay.style.overflow = 'hidden';
+        overlay.style.position = 'fixed';
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.background = 'rgba(0,0,0,0.95)';
+        overlay.style.zIndex = 999999;
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.color = '#fff';
+        overlay.style.fontSize = '2rem';
+        overlay.innerHTML = `
+            <div>
+                <strong>Daily LinkedIn limit reached!</strong>
+                <p>Come back tomorrow.</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+}
+
+// Listen for block message from background
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.action === "block_linkedin") {
+        console.clear();
+        console.log("LinkedIn block message received. Showing overlay.");
+        showBlockOverlay();
+    }
+});
+
+// on page load, check if the overlay should be shown
+window.addEventListener('load', () => {
+
+    // Run once on script load
+    hideJobElements();
+
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['dailyTimeSpent'], (result) => {
+            if ((result.dailyTimeSpent || 0) >= (typeof DAILY_LIMIT_MS !== "undefined" ? DAILY_LIMIT_MS : Number.MAX_SAFE_INTEGER)) {
+                console.log("Daily limit reached on page load. Showing overlay.");
+                showBlockOverlay();
+            }
+        });
+    }
+});
